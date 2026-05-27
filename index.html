@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ProCook">
+<link rel="apple-touch-icon" href="https://img.icons8.com/fluent/512/cooking-book.png">
+<title>Pro-Recettes</title>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: rgba(30, 41, 59, 0.7);
+    --accent: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.3);
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(circle at top right, var(--accent-glow), transparent);
+    font-family: 'Urbanist', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 60px 20px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo h1 { font-size: 24px; font-weight: 800; letter-spacing: -1px; }
+  .logo p { font-size: 13px; color: var(--accent); font-weight: 600; }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  #addBtn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+
+  .backup-btn {
+    background: #334155;
+    color: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .search-area { padding: 20px 20px 10px 20px; }
+  .search-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    color: #fff;
+    font-size: 16px;
+    outline: none;
+    backdrop-filter: blur(8px);
+  }
+
+  .categories-bar {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 20px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .categories-bar::-webkit-scrollbar { display: none; }
+  .cat-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cat-btn.active {
+    background: #e11d48;
+    border-color: #e11d48;
+    color: #fff;
+  }
+
+  .grid {
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .recipe-card {
+    background: var(--card);
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s;
+  }
+  .recipe-card:active { transform: scale(0.98); }
+  .card-img { width: 100%; height: 180px; object-fit: cover; background: #1e293b; }
+  .card-body { padding: 20px; }
+  .card-title { font-size: 19px; font-weight: 800; margin-bottom: 8px; }
+  
+  .badge-container { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .badge-cat { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #e11d48; color: #fff; font-weight: 700; }
+  .badge-diff { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 700; }
+
+  .macro-pills { display: flex; gap: 8px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 12px; flex-wrap: wrap; }
+  .macro-pill { font-size: 12px; padding: 4px 8px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--accent); font-weight: 700; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    width: 100%;
+    max-width: 550px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 30px;
+    position: relative;
+  }
+  
+  .field-label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin: 15px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .field { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; color: #fff; font-family: inherit; font-size: 15px; outline: none; }
+  
+  .macro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  
+  .photo-upload {
+    height: 150px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .save-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 16px;
+    border-radius: 16px;
+    font-weight: 800;
+    margin-top: 30px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .close-modal { position: absolute; top: 20px; right: 20px; background: var(--card); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+  .meta-info-display { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; font-size: 14px; }
+
+  .portion-selector {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--card);
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border);
+    width: fit-content;
+  }
+  .portion-btn {
+    background: #334155;
+    color: #fff;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .portion-btn:active { background: var(--accent); }
+  .portion-count { font-weight: 800; font-size: 16px; min-width: 60px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <h1>📚 Mes Recettes</h1>
+    <p id="count">0 recette</p>
+  </div>
+  <div class="header-actions">
+    <button class="backup-btn" onclick="openBackupMenu()" title="Sauvegarde / Partage">💾 Sauvegarde</button>
+    <button id="addBtn">+ Ajouter</button>
+  </div>
+</header>
+
+<div class="search-area">
+  <input type="search" class="search-input" id="searchInput" placeholder="Recette ou ingrédient..." oninput="render()">
+</div>
+
+<div class="categories-bar">
+  <button class="cat-btn active" onclick="filterCategory('Toutes', this)">Toutes</button>
+  <button class="cat-btn" onclick="filterCategory('Petit-déj', this)">Petit-déj</button>
+  <button class="cat-btn" onclick="filterCategory('Entrée', this)">Entrée</button>
+  <button class="cat-btn" onclick="filterCategory('Plat', this)">Plat</button>
+  <button class="cat-btn" onclick="filterCategory('Dessert', this)">Dessert</button>
+  <button class="cat-btn" onclick="filterCategory('Snack', this)">Snack</button>
+  <button class="cat-btn" onclick="filterCategory('Sauce', this)">Sauce</button>
+  <button class="cat-btn" onclick="filterCategory('Glace', this)">Glace</button>
+  <button class="cat-btn" onclick="filterCategory('Boisson', this)">Boisson</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+let recipes = JSON.parse(localStorage.getItem("pro_cook_data") || "[]");
+let currentCategory = "Toutes";
+
+let servingScale = { recipeId: null, currentServings: 1, baseServings: 1 };
+
+function save() { localStorage.setItem("pro_cook_data", JSON.stringify(recipes)); }
+
+function filterCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function parsePortionNumber(portionsStr) {
+  if (!portionsStr) return 0;
+  const match = portionsStr.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+}
+
+function getValuePerPortion(totalValue, portionsStr) {
+  const valueNum = parseFloat(totalValue);
+  if (!valueNum || !portionsStr) return null;
+  const portNum = parsePortionNumber(portionsStr);
+  if (portNum > 0) return Math.round((valueNum / portNum) * 10) / 10;
+  return null;
+}
+
+function getKcalPerPortion(kcal, portionsStr) {
+  const val = getValuePerPortion(kcal, portionsStr);
+  return val ? Math.round(val) : null;
+}
+
+function scaleIngredientsText(text, baseServings, currentServings) {
+  if (!text || baseServings <= 0 || currentServings <= 0) return text || 'Aucun ingrédient';
+  const ratio = currentServings / baseServings;
+  if (ratio === 1) return text;
+
+  return text.replace(/([0-9]+(?:[.,][0-9]+)?)/g, function(match) {
+    const num = parseFloat(match.replace(',', '.'));
+    if (isNaN(num)) return match;
+    
+    const scaled = num * ratio;
+    let finalNum = Number(scaled.toFixed(2)).toString();
+    return finalNum.replace('.', ',');
+  });
+}
+
+function render() {
+  const q = document.getElementById("searchInput").value.toLowerCase();
+  
+  const filtered = recipes.filter(r => {
+    const matchesSearch = r.title.toLowerCase().includes(q) || (r.ing && r.ing.toLowerCase().includes(q));
+    const matchesCategory = currentCategory === "Toutes" || r.category === currentCategory;
+    return matchesSearch && matchesCategory;
+  });
+  
+  document.getElementById("count").textContent = `${recipes.length} recette${recipes.length>1?'s':''}`;
+  
+  const grid = document.getElementById("grid");
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div style="text-align:center; color:var(--muted); padding:40px; grid-column: 1/-1;">Aucune recette trouvée.</div>`;
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(r => {
+    const kcalPerPortion = getKcalPerPortion(r.kcal, r.portions);
+    return `
+    <div class="recipe-card" onclick="openView('${r.id}')">
+      <img src="${r.img || 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=500&auto=format&fit=crop&q=60'}" class="card-img">
+      <div class="card-body">
+        <div class="badge-container">
+          ${r.category ? `<span class="badge-cat">${r.category}</span>` : ''}
+          ${r.difficulty ? `<span class="badge-diff">${r.difficulty}</span>` : ''}
+        </div>
+        <div class="card-title">${r.title}</div>
+        <div style="font-size:13px; color:var(--muted); margin-bottom:8px;">
+          ${r.time ? `⏱️ ${r.time}` : ''} ${r.portions ? `• 👥 ${r.portions}` : ''}
+        </div>
+        <div class="macro-pills">
+          <span class="macro-pill">🔥 ${r.kcal || 0} kcal ${kcalPerPortion ? `(${kcalPerPortion}/p.)` : ''}</span>
+          <span class="macro-pill">💪 ${r.prot || 0}g P</span>
+        </div>
+      </div>
+    </div>
+  `}).join("");
+}
+
+function openView(id) {
+  const r = recipes.find(x => x.id == id);
+  
+  const basePortionsCount = parsePortionNumber(r.portions) || 1;
+  servingScale.recipeId = id;
+  servingScale.baseServings = basePortionsCount;
+  servingScale.currentServings = basePortionsCount;
+
+  updateModalView(r);
+  document.getElementById("overlay").classList.add("open");
+}
+
+function updateModalView(r) {
+  const m = document.getElementById("modal");
+  
+  const kcalPerPortion = getKcalPerPortion(r.kcal, r.portions);
+  const protPerPortion = getValuePerPortion(r.prot, r.portions);
+  const carbPerPortion = getValuePerPortion(r.carb, r.portions);
+  const fatPerPortion = getValuePerPortion(r.fat, r.portions);
+
+  const scaledIngredients = scaleIngredientsText(r.ing, servingScale.baseServings, servingScale.currentServings);
+  const portionsLabel = r.portions ? r.portions.replace(/\d+/, servingScale.currentServings) : `${servingScale.currentServings} pers.`;
+
+  // Détection du changement de portion pour appliquer les styles conditionnels
+  const hasChanged = servingScale.currentServings !== servingScale.baseServings;
+
+  m.innerHTML = `
+    <button class="close-modal" onclick="closeOverlay()">✕</button>
+    ${r.img ? `<img src="${r.img}" style="width:100%; height:250px; object-fit:cover; border-radius:20px; margin-bottom:20px;">` : ''}
+    <h2 style="margin-bottom:10px;">${r.title}</h2>
+    
+    <div class="meta-info-display">
+      <div>⏱️ Temps : <b>${r.time || 'Non spécifié'}</b></div>
+      <div>👥 Portions d'origine : <b>${r.portions || 'Non spécifié'}</b></div>
+      <div>📅 Ajoutée le : <b>${r.date || 'Inconnue'}</b></div>
+    </div>
+
+    <div class="field-label" style="margin-top: 5px;">Ajuster les portions</div>
+    <div class="portion-selector">
+      <button class="portion-btn" onclick="changeServings(-1, '${r.id}')">−</button>
+      <div class="portion-count">${portionsLabel}</div>
+      <button class="portion-btn" onclick="changeServings(1, '${r.id}')">+</button>
+    </div>
+
+    <div class="macro-pills" style="margin: 15px 0 10px; border:none; padding:0;">
+      <span class="macro-pill" style="padding:8px 12px">🔥 Total: ${r.kcal || 0} kcal ${kcalPerPortion ? `(${kcalPerPortion}/p.)` : ''}</span>
+    </div>
+    <div class="macro-pills" style="margin: 0 0 25px; border:none; padding:0;">
+      <span class="macro-pill" style="padding:6px 10px; background:rgba(255,255,255,0.05); color:#fff;">
+        P: <b>${r.prot || 0}g</b> ${protPerPortion ? `(<span style="color:var(--accent)">${protPerPortion}g/p.</span>)` : ''}
+      </span>
+      <span class="macro-pill" style="padding:6px 10px; background:rgba(255,255,255,0.05); color:#fff;">
+        G: <b>${r.carb || 0}g</b> ${carbPerPortion ? `(<span style="color:var(--accent)">${carbPerPortion}g/p.</span>)` : ''}
+      </span>
+      <span class="macro-pill" style="padding:6px 10px; background:rgba(255,255,255,0.05); color:#fff;">
+        L: <b>${r.fat || 0}g</b> ${fatPerPortion ? `(<span style="color:var(--accent)">${fatPerPortion}g/p.</span>)` : ''}
+      </span>
+    </div>
+    
+    <div class="field-label">Ingrédients ${hasChanged ? '(Calculés ! ⚙️)' : ''}</div>
+    
+    <div style="background: ${hasChanged ? 'rgba(16, 185, 129, 0.1)' : 'var(--card)'}; padding:15px; border-radius:12px; margin-bottom:20px; white-space:pre-wrap; border: ${hasChanged ? '1px dashed var(--accent)' : '1px solid transparent'}; transition: all 0.3s ease;">${scaledIngredients}</div>
+    
+    <div class="field-label">Préparation</div>
+    <div style="line-height:1.6; white-space:pre-wrap; margin-bottom:20px;">${r.steps || 'Aucune étape spécifiée'}</div>
+    
+    ${r.notes ? `<div class="field-label">Notes perso</div><div style="background:rgba(245,158,11,0.1); border-left:4px solid #f59e0b; padding:15px; border-radius:8px; margin-bottom:20px; white-space:pre-wrap; font-style:italic;">${r.notes}</div>` : ''}
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <button class="save-btn" style="background:#334155; margin-top: 20px;" onclick="openForm('${r.id}')">✏️ Modifier</button>
+      <button class="save-btn" style="background:#10b981; margin-top: 20px;" onclick="shareSingleRecipe('${r.id}')">🔗 Partager la recette</button>
+    </div>
+  `;
+}
+
+function changeServings(change, id) {
+  const r = recipes.find(x => x.id == id);
+  if (!r) return;
+  
+  let newVal = servingScale.currentServings + change;
+  if (newVal < 1) newVal = 1;
+  
+  servingScale.currentServings = newVal;
+  updateModalView(r);
+}
+
+function openForm(id = null) {
+  const r = id ? recipes.find(x => x.id == id) : { title:"", category:"Plat", difficulty:"Facile", time:"", portions:"", kcal:"", prot:"", carb:"", fat:"", ing:"", steps:"", notes:"", img: "" };
+  const m = document.getElementById("modal");
+  m.innerHTML = `
+    <button class="close-modal" onclick="closeOverlay()">✕</button>
+    <h2 style="margin-bottom:20px;">${id ? 'Éditer la recette' : 'Nouvelle Recette'}</h2>
+    <div class="photo-upload" id="photoPreview" onclick="document.getElementById('f_file').click()" style="background-image: url('${r.img || ''}')">
+      ${!r.img ? '<span>📸 Ajouter une photo</span>' : ''}
+    </div>
+    <input type="file" id="f_file" hidden onchange="handleFile(this)">
+    <input type="hidden" id="f_img" value="${r.img || ''}">
+    
+    <label class="field-label">Titre *</label>
+    <input class="field" id="f_title" value="${r.title}" placeholder="Ex : Tarte tatin de Mamie">
+    
+    <div class="macro-grid">
+      <div>
+        <label class="field-label">Catégorie</label>
+        <select class="field" id="f_category">
+          <option value="Petit-déj" ${r.category==="Petit-déj"?'selected':''}>Petit-déj</option>
+          <option value="Entrée" ${r.category==="Entrée"?'selected':''}>Entrée</option>
+          <option value="Plat" ${r.category==="Plat"?'selected':''}>Plat</option>
+          <option value="Dessert" ${r.category==="Dessert"?'selected':''}>Dessert</option>
+          <option value="Snack" ${r.category==="Snack"?'selected':''}>Snack</option>
+          <option value="Sauce" ${r.category==="Sauce"?'selected':''}>Sauce</option>
+          <option value="Glace" ${r.category==="Glace"?'selected':''}>Glace</option>
+          <option value="Boisson" ${r.category==="Boisson"?'selected':''}>Boisson</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Difficulté</label>
+        <select class="field" id="f_difficulty">
+          <option value="Facile" ${r.difficulty==="Facile"?'selected':''}>Facile</option>
+          <option value="Moyen" ${r.difficulty==="Moyen"?'selected':''}>Moyen</option>
+          <option value="Difficile" ${r.difficulty==="Difficile"?'selected':''}>Difficile</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="macro-grid">
+      <div><label class="field-label">Temps</label><input class="field" id="f_time" value="${r.time}" placeholder="45 min"></div>
+      <div><label class="field-label">Portions (ex: 4 pers.)</label><input class="field" id="f_portions" value="${r.portions}" placeholder="4 pers."></div>
+    </div>
+
+    <div class="macro-grid" style="border-top: 1px solid var(--border); margin-top:15px; padding-top:10px;">
+      <div><label class="field-label">Calories (kcal)</label><input type="number" class="field" id="f_kcal" value="${r.kcal}"></div>
+      <div><label class="field-label">Protéines (g)</label><input type="number" class="field" id="f_prot" value="${r.prot}"></div>
+      <div><label class="field-label">Glucides (g)</label><input type="number" class="field" id="f_carb" value="${r.carb}"></div>
+      <div><label class="field-label">Lipides (g)</label><input type="number" class="field" id="f_fat" value="${r.fat}"></div>
+    </div>
+    
+    <label class="field-label">Ingrédients</label>
+    <textarea class="field" id="f_ing" rows="4" placeholder="- 200g de farine&#10;- 3 œufs...">${r.ing || ''}</textarea>
+    
+    <label class="field-label">Étapes de préparation</label>
+    <textarea class="field" id="f_steps" rows="4" placeholder="1. Préchauffer le four...&#10;2. Mélanger...">${r.steps || ''}</textarea>
+
+    <label class="field-label">Notes Perso</label>
+    <textarea class="field" id="f_notes" rows="2" placeholder="Astuces, variantes...">${r.notes || ''}</textarea>
+    
+    <button class="save-btn" onclick="saveRecipe('${id || ''}')">💾 Enregistrer</button>
+    ${id ? `<button class="save-btn" style="background:#ef4444; margin-top:10px;" onclick="deleteRecipe('${id}')">🗑️ Supprimer</button>` : ''}
+  `;
+  document.getElementById("overlay").classList.add("open");
+}
+
+function handleFile(input) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("f_img").value = e.target.result;
+    document.getElementById("photoPreview").style.backgroundImage = `url(${e.target.result})`;
+    document.getElementById("photoPreview").innerHTML = "";
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function saveRecipe(id) {
+  const title = document.getElementById("f_title").value.trim();
+  if(!title) { alert("Le titre est obligatoire !"); return; }
+  
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('fr-FR');
+
+  const data = {
+    id: id || Date.now().toString(),
+    title: title,
+    category: document.getElementById("f_category").value,
+    difficulty: document.getElementById("f_difficulty").value,
+    time: document.getElementById("f_time").value,
+    portions: document.getElementById("f_portions").value,
+    kcal: document.getElementById("f_kcal").value,
+    prot: document.getElementById("f_prot").value,
+    carb: document.getElementById("f_carb").value,
+    fat: document.getElementById("f_fat").value,
+    ing: document.getElementById("f_ing").value,
+    steps: document.getElementById("f_steps").value,
+    notes: document.getElementById("f_notes").value,
+    date: id ? (recipes.find(x => x.id == id).date || formattedDate) : formattedDate,
+    img: document.getElementById("f_img").value
+  };
+  
+  if (id) recipes = recipes.map(x => x.id == id ? data : x);
+  else recipes.unshift(data);
+  save(); closeOverlay(); render();
+}
+
+function deleteRecipe(id) {
+  if(!confirm("Supprimer cette recette ?")) return;
+  recipes = recipes.filter(x => x.id != id);
+  save(); closeOverlay(); render();
+}
+
+function openBackupMenu() {
+  const m = document.getElementById("modal");
+  m.innerHTML = `
+    <button class="close-modal" onclick="closeOverlay()">✕</button>
+    <h2 style="margin-bottom:20px;">💾 Sauvegarde & Partage</h2>
+    <p style="font-size:14px; color:var(--muted); margin-bottom:20px; line-height:1.4;">
+      Exportez vos recettes sous forme de fichier pour ne jamais les perdre, ou importez un fichier de sauvegarde pour restaurer vos recettes.
+    </p>
+    <button class="save-btn" style="margin-top:0; background:var(--accent);" onclick="exportRecipes()">📤 Exporter (Télécharger la sauvegarde)</button>
+    <div style="border-top: 1px solid var(--border); margin-top:25px; padding-top:20px;">
+      <label class="field-label">Importer une sauvegarde complète (.json)</label>
+      <input type="file" id="import_file" class="field" accept=".json" onchange="importRecipes(this)">
+    </div>
+    <div style="border-top: 1px solid var(--border); margin-top:25px; padding-top:20px;">
+      <label class="field-label">📥 Importer une seule recette (.json)</label>
+      <input type="file" id="import_single_file" class="field" accept=".json" onchange="importSingleRecipe(this)">
+    </div>
+  `;
+  document.getElementById("overlay").classList.add("open");
+}
+
+function exportRecipes() {
+  if(recipes.length === 0) { alert("Vous n'avez aucune recette à exporter !"); return; }
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(recipes, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `sauvegarde_recettes_${new Date().toISOString().slice(0,10)}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+function shareSingleRecipe(id) {
+  const r = recipes.find(x => x.id == id);
+  if(!r) return;
+  
+  const singleRecipeData = {
+    type: "pro_cook_single_recipe",
+    recipe: r
+  };
+  
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(singleRecipeData, null, 2));
+  const downloadAnchor = document.createElement('a');
+  const sanitizedTitle = r.title.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `recette_${sanitizedTitle}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+function importRecipes(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      if (Array.isArray(importedData)) {
+        if(confirm(`Voulez-vous fusionner ${importedData.length} recettes avec vos recettes actuelles ?`)) {
+          const existingIds = new Set(recipes.map(r => r.id));
+          importedData.forEach(newRecipe => {
+            if(!existingIds.has(newRecipe.id)) {
+              recipes.push(newRecipe);
+            }
+          });
+          save(); render(); closeOverlay(); alert("Importation réussie avec succès !");
+        }
+      } else { alert("Le fichier n'est pas au bon format de sauvegarde complète."); }
+    } catch (err) { alert("Erreur lors de la lecture du fichier de sauvegarde."); }
+  };
+  reader.readAsText(file);
+}
+
+function importSingleRecipe(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importedData = JSON.parse(e.target.result);
+      if (importedData && importedData.type === "pro_cook_single_recipe" && importedData.recipe) {
+        const newRecipe = importedData.recipe;
+        newRecipe.id = Date.now().toString();
+        recipes.unshift(newRecipe);
+        save(); render(); closeOverlay(); alert(`La recette "${newRecipe.title}" a été ajoutée avec succès !`);
+      } else { alert("Ce fichier ne correspond pas au format d'une recette unique Pro-Recettes."); }
+    } catch (err) { alert("Erreur lors de la lecture du fichier de la recette."); }
+  };
+  reader.readAsText(file);
+}
+
+function closeOverlay() { document.getElementById("overlay").classList.remove("open"); }
+document.getElementById("addBtn").onclick = () => openForm();
+render();
+</script>
+</body>
+</html>
